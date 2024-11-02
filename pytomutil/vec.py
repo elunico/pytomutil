@@ -5,10 +5,25 @@ from typing import Type
 from numeric import lerp
 
 
+class ClassProperty:
+    def __init__(self, supplier):
+        self.supplier = supplier
+
+    def __set_name__(self, owner, name):
+        self.private_name = "_" + name
+
+    def __get__(self, obj, objtype):
+        if objtype is None:
+            raise TypeError("ClassProperty should be called on class")
+        return self.supplier(objtype)
+
+
 class Vec2D:
     """
     Represents a 2-dimensional vector. An (x, y) pair
     """
+
+    origin = ClassProperty(lambda cls: cls(0, 0))
 
     def __init__(self, x: float, y: float) -> None:
         self.x = x
@@ -19,6 +34,10 @@ class Vec2D:
         x = magnitude * math.cos(angle)
         y = magnitude * math.sin(angle)
         return cls(x, y)
+
+    @classmethod
+    def from_ma(cls, mag: float, angle: float) -> "Vec2D":
+        return cls.from_magnitude_and_angle(mag, angle)
 
     @property
     def polar(self) -> tuple[float, float]:
@@ -35,7 +54,7 @@ class Vec2D:
 
     @property
     def magnitude(self) -> float:
-        return math.sqrt(self.x**2 + self.y**2)
+        return math.sqrt(self.magSquared)
 
     @magnitude.setter
     def magnitude(self, value: float):
@@ -43,8 +62,19 @@ class Vec2D:
         self *= value
 
     @property
+    def mag(self) -> float:
+        return self.magnitude
+
+    @mag.setter
+    def mag(self, value: float) -> None:
+        self.magnitude = value
+
+    @property
     def magSquared(self) -> float:
-        return self.magnitude**2
+        return self.x**2 + self.y**2
+
+    def tie(self, other: "Vec2D") -> list[float]:
+        return list(self) + list(other)
 
     def limit(self, maximum: float):
         m = self.magnitude
@@ -151,7 +181,7 @@ class Vec2D:
                 return {"x": self.x, "y": self.y}[i]
             elif isinstance(i, int):
                 return [self.x, self.y][i]
-        except (AttributeError, IndexError):
+        except (KeyError, IndexError):
             raise IndexError(f"Invalid index: {repr(i)}") from None
         else:
             raise TypeError(f"Type {repr(type(i))} is not a valid Vec2D index")
@@ -164,7 +194,7 @@ class Vec2D:
                 self.y = value
             else:
                 raise IndexError()
-        except (AttributeError, IndexError):
+        except (KeyError, IndexError):
             raise IndexError(f"Invalid index: {repr(i)}") from None
 
     def __bool__(self) -> bool:
