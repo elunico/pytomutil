@@ -112,6 +112,12 @@ class Vec2D:
     def list(self):
         return [self.x, self.y]
 
+    def swap(self) -> None:
+        self.x, self.y = self.y, self.x
+
+    def swapped(self) -> "Vec2D":
+        return Vec2D(self.y, self.x)
+
     def __iter__(self):
         return iter([self.x, self.y])
 
@@ -135,6 +141,9 @@ class Vec2D:
 
     def __len__(self) -> int:
         return 2
+
+    def __reversed__(self) -> "Vec2D":
+        return Vec2D(self.y, self.x)
 
     def __getitem__(self, i: str | int) -> float:
         try:
