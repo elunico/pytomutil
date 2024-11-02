@@ -1,7 +1,8 @@
 import random
 import math
+from typing import Type
 
-from pytomutil import lerp
+from numeric import lerp
 
 
 class Vec2D:
@@ -81,6 +82,10 @@ class Vec2D:
     def angle_between(self, other: "Vec2D") -> float:
         return math.acos(self.dot(other) / (self.magnitude * other.magnitude))
 
+    def set(self, x: float, y: float) -> None:
+        self.x = x
+        self.y = y
+
     @property
     def heading(self) -> float:
         return math.atan2(self.y, self.x)
@@ -104,6 +109,12 @@ class Vec2D:
     def copy(self):
         return Vec2D(self.x, self.y)
 
+    def list(self):
+        return [self.x, self.y]
+
+    def __iter__(self):
+        return iter([self.x, self.y])
+
     def __complex__(self) -> complex:
         return self.x + self.y * 1j
 
@@ -112,6 +123,43 @@ class Vec2D:
             return NotImplemented
 
         return value.x == self.x and value.y == self.y
+
+    def __floor__(self) -> "Vec2D":
+        return Vec2D(math.floor(self.x), math.floor(self.y))
+
+    def __ceil__(self) -> "Vec2D":
+        return Vec2D(math.ceil(self.x), math.ceil(self.y))
+
+    def __round__(self, n: int) -> "Vec2D":
+        return Vec2D(round(self.x, n), round(self.y, n))
+
+    def __len__(self) -> int:
+        return 2
+
+    def __getitem__(self, i: str | int) -> float:
+        try:
+            if isinstance(i, str):
+                return {"x": self.x, "y": self.y}[i]
+            elif isinstance(i, int):
+                return [self.x, self.y][i]
+        except (AttributeError, IndexError):
+            raise IndexError(f"Invalid index: {repr(i)}") from None
+        else:
+            raise TypeError(f"Type {repr(type(i))} is not a valid Vec2D index")
+
+    def __setitem__(self, i: str | int, value: float) -> None:
+        try:
+            if i == "x" or i == 0:
+                self.x = value
+            elif i == "y" or i == 1:
+                self.y = value
+            else:
+                raise IndexError()
+        except (AttributeError, IndexError):
+            raise IndexError(f"Invalid index: {repr(i)}") from None
+
+    def __bool__(self) -> bool:
+        return bool(self.x) or bool(self.y)
 
     def __hash__(self) -> int:
         code = hash(self.x)
