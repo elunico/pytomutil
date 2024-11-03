@@ -1,6 +1,8 @@
 import random
 import math
-from typing import Type
+import typing
+import warnings
+import os
 
 from numeric import lerp
 
@@ -18,7 +20,20 @@ class ClassProperty:
         return self.supplier(objtype)
 
 
-class Vec2D:
+class ImmutableClass(type):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __setattr__(self, attr, value):
+        if os.environ.get("PYTOMUTIL_VEC_ALLOW_OVERRIDE", False):
+            msg = f"attr {repr(attr)} set to {repr(value)} but {self} is an immutable class"
+            warnings.warn(msg)
+        else:
+            msg = f"Cannot set attr {repr(attr)} to {repr(value)} because {self} is an immutable class"
+            raise TypeError(msg)
+
+
+class Vec2D(metaclass=ImmutableClass):
     """
     Represents a 2-dimensional vector. An (x, y) pair
     """
@@ -38,6 +53,24 @@ class Vec2D:
     @classmethod
     def from_ma(cls, mag: float, angle: float) -> "Vec2D":
         return cls.from_magnitude_and_angle(mag, angle)
+
+    @classmethod
+    def from_iter(cls, iterable: typing.Iterable[float]) -> "Vec2D" | list["Vec2D"]:
+        i = iter(iterable)
+        result = []
+        while True:
+            try:
+                x = next(i)
+            except StopIteration:
+                break
+            try:
+                y = next(i)
+            except StopIteration:
+                raise ValueError(f"Iterable {iterable} has an odd number of elements")
+
+            result.append(Vec2D(x, y))
+
+        return result if len(result) != 1 else result[0]
 
     @property
     def polar(self) -> tuple[float, float]:
@@ -239,32 +272,37 @@ class Vec2D:
             return NotImplemented
         return Vec2D(self.x // other, self.y // other)
 
-    def __iadd__(self, other: "Vec2D") -> None:
+    def __iadd__(self, other: "Vec2D") -> "Vec2D":
         if not isinstance(other, Vec2D):
             return NotImplemented
         self.x += other.x
         self.y += other.y
+        return self
 
-    def __isub__(self, other: "Vec2D") -> None:
+    def __isub__(self, other: "Vec2D") -> "Vec2D":
         if not isinstance(other, Vec2D):
             return NotImplemented
         self.x -= other.x
         self.y -= other.y
+        return self
 
-    def __imul__(self, other: float | int) -> None:
+    def __imul__(self, other: float | int) -> "Vec2D":
         if not isinstance(other, (float, int)):
             return NotImplemented
         self.x *= other
         self.y *= other
+        return self
 
-    def __itruediv__(self, other: float | int) -> None:
+    def __itruediv__(self, other: float | int) -> "Vec2D":
         if not isinstance(other, (float, int)):
             return NotImplemented
         self.x /= other
         self.y /= other
+        return self
 
-    def __ifloordiv__(self, other: float | int) -> None:
+    def __ifloordiv__(self, other: float | int) -> "Vec2D":
         if not isinstance(other, (float, int)):
             return NotImplemented
         self.x //= other
         self.y //= other
+        return self
