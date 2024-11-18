@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, cast
+from typing import TypeVar, Generic, cast, is_typeddict
 from collections import deque, OrderedDict
 
 T = TypeVar("T")
@@ -162,6 +162,9 @@ class Graph(Generic[T]):
             for start, end in connections.items():
                 self.connect(start, end)
 
+    def __getitem__(self, v: T) -> Node:
+        return self.checked_get(v)
+
     def add(self, value: T):
         self.nodes[value] = Node(value)
 
@@ -184,12 +187,14 @@ class Graph(Generic[T]):
         self.reset()
         return r
 
+    def checked_get(self, v: T) -> Node:
+        if v not in self.nodes:
+            raise ValueError("No such value {!r} in graph".format(v))
+        return self.nodes[v]
+
     def disconnect(self, v1: T, v2: T) -> bool:
-        try:
-            n1 = self.nodes[v1]
-            n2 = self.nodes[v2]
-        except KeyError:
-            raise ValueError("No such value to connect") from None
+        n1 = self.checked_get(v1)
+        n2 = self.checked_get(v2)
 
         if not n1.is_connected(n2):
             return False
@@ -198,13 +203,12 @@ class Graph(Generic[T]):
         return True
 
     def connect(self, value1: T, value2: T) -> bool:
-        try:
-            n1 = self.nodes[value1]
-            n2 = self.nodes[value2]
-        except KeyError:
-            raise ValueError("No such value to connect") from None
+        n1 = self.checked_get(value1)
+        n2 = self.checked_get(value2)
 
-        if n1.is_connected(n2):
+        if (n1.is_connected(n2) and self.directed) or (
+            n1.is_connected(n2) and n2.is_connected(n1) and not self.directed
+        ):
             return False
 
         n1.connect(n2)
@@ -213,12 +217,10 @@ class Graph(Generic[T]):
         return True
 
     def is_connected(self, value1: T, value2: T) -> bool:
-        try:
-            n1 = self.nodes[value1]
-            n2 = self.nodes[value2]
-        except KeyError:
-            raise ValueError("No such value to connect") from None
+        n1 = self.checked_get(value1)
+        n2 = self.checked_get(value2)
 
+        # reciprocal check not needed since connect() will connect in both directions if not directed
         return n1.is_connected(n2)
 
 
@@ -227,3 +229,4 @@ with open("test/simple.gsf") as f:
 
 print(g.bfs("a", "e"))
 print(g.dfs("a", "e"))
+print(g["e"])
