@@ -1,0 +1,7 @@
+!nodir
+a:a, b, c, e
+b:c, d
+c:d
+d:e
+e:g
+g:
