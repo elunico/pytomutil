@@ -1,7 +1,8 @@
+# graph is not directed
 !nodir
 a:a, b, c, e
 b:c, d
 c:d
 d:e
 e:g
-g:
+g: # e connects to g but not needed in list bc not directed

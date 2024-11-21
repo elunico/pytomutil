@@ -1,18 +1,26 @@
-from typing import TypeVar, Generic, cast, is_typeddict
+from typing import TypeVar, Generic, cast
 from collections import deque, OrderedDict
 
 T = TypeVar("T")
 
 
 class Node:
+    class NodeSupport:
+        def __init__(self, visited: bool = False, linked_by: "Node | None" = None):
+            self.visited = visited
+            self.linked_by = linked_by
+
+        def reset(self):
+            self.visited = False
+            self.linked_by = None
+
     def __repr__(self):
-        return f"Node(data={repr(self.data)}, connections={len(self.connections)}, visited={self.visited})"
+        return f"Node(data={repr(self.data)}, connections={len(self.connections)}, visited={self.support.visited})"
 
     def __init__(self, obj: object):
         self.data = obj
         self.connections = OrderedDict()
-        self.visited = False
-        self.linked_by: Node | None = None
+        self.support = Node.NodeSupport()
 
     def __hash__(self) -> int:
         return hash((self.data))
@@ -32,65 +40,55 @@ class Node:
     def is_connected(self, other: "Node") -> bool:
         return other in self.connections
 
-    def bfs(self, value: object) -> list["Node"]:
-        result = []
-        if self.data == value:
-            result.append(self)
-            return result
-
-        self.visited = True
-        q = deque(self.connections)
+    def bfs(self, value: object) -> deque["Node"]:
+        result = deque()
+        q = deque()
+        q.append(self)
+        q.extend(self.connections)
 
         while q:
-            this = q.popleft()
-            if this.visited:
+            this: Node | None = cast(Node, q.popleft())
+            if this.support.visited:
                 continue
             if this.data == value:
                 while this is not None:
-                    result.append(this)
-                    this = this.linked_by
+                    result.appendleft(this)
+                    this = this.support.linked_by
                 break
             else:
-                this.visited = True
+                this.support.visited = True
                 for neighbor in this.connections:
-                    if not neighbor.visited:
-                        # infinite loop
-                        neighbor.linked_by = this
+                    if not neighbor.support.visited:
+                        neighbor.support.linked_by = this
                         q.append(neighbor)
 
-        if len(result) == 0:
-            return result
-        else:
-            return [self] + list(reversed(result))
+        return result
 
-    def dfs(self, value: object) -> list["Node"]:
-        def impl(this: "Node", result: list[Node]):
-            if this.visited:
-                return
+    def dfs(self, value: object) -> deque["Node"]:
+        def impl(this: "Node", result: deque[Node]):
+            if this.support.visited:
+                return False
 
-            this.visited = True
             if this.data == value:
                 walker: Node | None = this
                 while walker:
-                    result.append(walker)
-                    walker = walker.linked_by
-                return result
+                    result.appendleft(walker)
+                    walker = walker.support.linked_by
+                return True
 
+            this.support.visited = True
             for item in this.connections:
-                if item is not this and not item.visited:
-                    item.linked_by = this
-                    impl(item, result)
+                if not item.support.visited:
+                    item.support.linked_by = this
+                    if impl(item, result):
+                        break
 
-        if self.data == value:
-            return [self]
-        else:
-            r = []
-            impl(self, r)
-            return r
+        r = deque()
+        impl(self, r)
+        return r
 
     def reset(self):
-        self.visited = False
-        self.linked_by = None
+        self.support.reset()
 
 
 import re
@@ -103,7 +101,7 @@ comment = re.compile(r"\s*#.*?\n")
 class Graph(Generic[T]):
     @classmethod
     def fromgraphstr(cls: type["Graph[str]"], s: str) -> "Graph[str]":
-        s = comment.sub("\n", s)
+        s = comment.sub("", s)
         lines = line_sep.split(s)
         if lines[0][0] == "!":
             directive = lines.pop(0)
@@ -140,15 +138,6 @@ class Graph(Generic[T]):
 
         return g
 
-    def __str__(self):
-        return ", ".join(
-            f"Graph[{i}[{len(i.connections)} conns.]]" for i in self.nodes.values()
-        )
-
-    def reset(self):
-        for node in self.nodes.values():
-            node.reset()
-
     def __init__(
         self, *values: T, connections: dict[T, T] | None = None, directed: bool = True
     ):
@@ -164,6 +153,15 @@ class Graph(Generic[T]):
 
     def __getitem__(self, v: T) -> Node:
         return self.checked_get(v)
+
+    def __str__(self):
+        return ", ".join(
+            f"Graph[{i}[{len(i.connections)} conns.]]" for i in self.nodes.values()
+        )
+
+    def reset(self):
+        for node in self.nodes.values():
+            node.reset()
 
     def add(self, value: T):
         self.nodes[value] = Node(value)
@@ -200,6 +198,8 @@ class Graph(Generic[T]):
             return False
 
         n1.disconnect(n2)
+        if not self.directed:
+            n2.disconnect(n1)
         return True
 
     def connect(self, value1: T, value2: T) -> bool:
@@ -224,9 +224,18 @@ class Graph(Generic[T]):
         return n1.is_connected(n2)
 
 
-with open("test/simple.gsf") as f:
-    g = Graph.fromgraphstr(f.read())
+if __name__ == "__main__":
+    # example
+    # print("This is an example usage of the Graph data structure")
+    # print("You probably want to use an import instead")
+    # print("See: test/friends.gsf and pytomutil/graph.py")
+    # with open("test/friends.gsf") as f:
+    #     g = Graph.fromgraphstr(f.read())
 
-print(g.bfs("a", "e"))
-print(g.dfs("a", "e"))
-print(g["e"])
+    # print(g)
+    # print(g.bfs("alice", "dave"))
+    with open("test/complex.gsf") as f:
+        g = Graph.fromgraphstr(f.read())
+
+    print(g.dfs("a", "j"))
+    print(g.bfs("a", "j"))

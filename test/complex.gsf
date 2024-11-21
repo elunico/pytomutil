@@ -1,0 +1,16 @@
+!nodir
+a: b, v
+b: a, c, v
+c: b, v, h, n
+d: e, v
+e: d, f, v
+f: e, v, g
+g: f, v, y
+h: c, i, y
+i: h, y
+j: p, y
+n: c, y
+m: p, y
+p: j, m, y
+v: a, b, c, g, f, e, d
+y: g, h, i, j, p, m, n

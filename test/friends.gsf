@@ -1,0 +1,5 @@
+!nodir
+alice: bob, carol
+bob: alice, carol, dave
+carol: alice, bob
+dave: bob
