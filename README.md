@@ -6,7 +6,7 @@ Similar to the `tecoradors-elunico` package I have but that is just for useful d
 
 ## PyPI
 
-Not yet published to PyPI but coming soon.
+[https://pypi.org/project/pytomutil-elunico/](https://pypi.org/project/pytomutil-elunico/)
 
 ## Content
 

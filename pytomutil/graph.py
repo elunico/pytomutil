@@ -1,7 +1,30 @@
-from typing import TypeVar, Generic, cast
+from typing import TypeVar, Generic, cast, TextIO, Protocol
 from collections import deque, OrderedDict
 
 T = TypeVar("T")
+
+
+class Writable(Protocol):
+    def write(self, s: str, /) -> int:
+        ...
+
+
+class StrFile(Writable):
+    def __init__(self) -> None:
+        self.chunks = []
+
+    def write(self, s: str, /) -> int:
+        self.chunks.append(s)
+        return len(s)
+
+    def to_str(self) -> str:
+        from functools import reduce
+
+        # keep initial value in case list is empty
+        return reduce(str.__add__, self.chunks, "")
+
+    def to_file(self, f: Writable) -> None:
+        f.write(self.to_str())
 
 
 class Node:
@@ -186,13 +209,13 @@ class Graph(Generic[T]):
         return r
 
     def checked_get(self, v: T) -> Node:
-        if v not in self.nodes:
+        if not self.has(v):
             raise ValueError("No such value {!r} in graph".format(v))
         return self.nodes[v]
 
     def disconnect(self, v1: T, v2: T) -> bool:
-        n1 = self.checked_get(v1)
-        n2 = self.checked_get(v2)
+        n1 = self[v1]
+        n2 = self[v2]
 
         if not n1.is_connected(n2):
             return False
@@ -203,12 +226,13 @@ class Graph(Generic[T]):
         return True
 
     def connect(self, value1: T, value2: T) -> bool:
-        n1 = self.checked_get(value1)
-        n2 = self.checked_get(value2)
+        n1 = self[value1]
+        n2 = self[value2]
 
-        if (n1.is_connected(n2) and self.directed) or (
-            n1.is_connected(n2) and n2.is_connected(n1) and not self.directed
-        ):
+        if n1.is_connected(n2) and self.directed:
+            return False
+
+        if (n1.is_connected(n2) and n2.is_connected(n1)) and not self.directed:
             return False
 
         n1.connect(n2)
@@ -217,11 +241,39 @@ class Graph(Generic[T]):
         return True
 
     def is_connected(self, value1: T, value2: T) -> bool:
-        n1 = self.checked_get(value1)
-        n2 = self.checked_get(value2)
-
         # reciprocal check not needed since connect() will connect in both directions if not directed
-        return n1.is_connected(n2)
+        return self[value1].is_connected(self[value2])
+
+    def tographstring(self, f: Writable, *, simple: bool = False):
+        if simple and self.directed:
+            import warnings
+
+            warnings.warn("`simple` parameter is meaningless for directed graphs")
+
+        if self.directed:
+            f.write("!dir\n")
+        else:
+            f.write("!nodir\n")
+
+        if simple and not self.directed:
+            seen = set()
+            for node in self.nodes:
+                f.write(f"{node}: ")
+                for idx, val in enumerate(self.nodes[node].connections):
+                    if (val.data, node) in seen:
+                        continue
+                    if idx == len(self.nodes[node].connections) - 1:
+                        f.write(f"{val.data}")
+                    else:
+                        f.write(f"{val.data}, ")
+
+                    seen.add((node, val.data))
+                f.write("\n")
+        else:
+            for node in self.nodes:
+                f.write(f"{node}: ")
+                f.write(f'{", ".join(i.data for i in self.nodes[node].connections)}')
+                f.write("\n")
 
 
 if __name__ == "__main__":
@@ -239,3 +291,6 @@ if __name__ == "__main__":
 
     print(g.dfs("a", "j"))
     print(g.bfs("a", "j"))
+
+    with open("test/output.gsf", "w") as h:
+        g.tographstring(h, simple=True)
