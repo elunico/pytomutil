@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pytomutil-elunico",
-    version="0.0.8",
+    version="0.0.9",
     author="Thomas Povinelli",
     author_email="tompov227@gmail.com",
     description="Library for parsing and writing Simple Property List (SPL) files ",
