@@ -4,7 +4,7 @@ import typing
 import warnings
 import os
 
-from numeric import lerp
+from pytomutil.numeric import lerp
 
 
 class ClassProperty:
@@ -55,7 +55,7 @@ class Vec2D(metaclass=ImmutableClass):
         return cls.from_magnitude_and_angle(mag, angle)
 
     @classmethod
-    def from_iter(cls, iterable: typing.Iterable[float]) -> "Vec2D" | list["Vec2D"]:
+    def from_iter(cls, iterable: typing.Iterable[float]) -> 'Vec2D | list["Vec2D"]':
         i = iter(iterable)
         result = []
         while True:

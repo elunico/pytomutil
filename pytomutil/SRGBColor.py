@@ -1,4 +1,4 @@
-from numeric import lerp
+from pytomutil.numeric import lerp
 
 
 class HSLColor:
@@ -6,6 +6,9 @@ class HSLColor:
         self.hue = h
         self.saturation = s
         self.luminance = l
+    
+    def __str__(self) -> str:
+        return "HSLColor({}, {}, {})".format(self.hue, self.saturation, self.luminance)
 
 
 class SRGBColor:

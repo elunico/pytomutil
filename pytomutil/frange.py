@@ -4,6 +4,12 @@ class frange:
         self.stop = stop
         self.step = step
 
+    def __repr__(self) -> str:
+        return f"frange({self.start}, {self.stop}, {self.step})"
+    
+    def __str__(self) -> str:
+        return f"frange({self.start}, {self.stop}, {self.step})"
+
     def __iter__(self):
         return type(self)(self.start, self.stop, self.step)
 

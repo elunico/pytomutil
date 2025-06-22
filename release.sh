@@ -1,8 +1,8 @@
 #!/usr/bin/env zsh
 
-python -m twine --version 1>/dev/null 2>&1 || python -m pip install twine
-python -m wheel version 1>/dev/null 2>&1 || python -m pip install wheel
-(python -m pip list | grep setuptools 1>/dev/null 2>&1) || python -m pip install setuptools
+python3 -m twine --version 1>/dev/null 2>&1 || python3 -m pip install twine
+python3 -m wheel version 1>/dev/null 2>&1 || python3 -m pip install wheel
+(python3 -m pip list | grep setuptools 1>/dev/null 2>&1) || python3 -m pip install setuptools
 
 echo -n 'Did you increment the version number (y/n)? '
 read -q

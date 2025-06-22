@@ -13,6 +13,12 @@ class StrFile(Writable):
     def __init__(self) -> None:
         self.chunks = []
 
+    def __repr__(self) -> str:
+        return f"StrFile(chunks={len(self.chunks)})"
+    
+    def __str__(self) -> str:        
+        return f"StrFile with {len(self.chunks)} chunks"
+
     def write(self, s: str, /) -> int:
         self.chunks.append(s)
         return len(s)
